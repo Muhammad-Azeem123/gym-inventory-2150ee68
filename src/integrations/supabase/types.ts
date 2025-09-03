@@ -109,6 +109,96 @@ export type Database = {
           },
         ]
       }
+      maps: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          is_current: boolean
+          name: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          is_current?: boolean
+          name: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_current?: boolean
+          name?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          name: string
+          price_per_unit: number
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+          price_per_unit: number
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          price_per_unit?: number
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          price_per_unit: number
+          product_name: string
+          quantity: number
+          total_cost: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          price_per_unit: number
+          product_name: string
+          quantity: number
+          total_cost: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          price_per_unit?: number
+          product_name?: string
+          quantity?: number
+          total_cost?: number
+        }
+        Relationships: []
+      }
       routes: {
         Row: {
           accessibility: string
@@ -157,12 +247,62 @@ export type Database = {
           },
         ]
       }
+      sales: {
+        Row: {
+          category: string
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          price_per_unit: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          total_amount: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          price_per_unit: number
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          total_amount: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          price_per_unit?: number
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      set_current_map: {
+        Args: { map_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
