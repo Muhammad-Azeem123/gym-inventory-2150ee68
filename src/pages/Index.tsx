@@ -1,9 +1,9 @@
-import { ClinicNavigation } from "@/components/ClinicNavigation";
+import { GymDashboard } from "@/components/GymDashboard";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      <ClinicNavigation />
+      <GymDashboard />
     </div>
   );
 };
