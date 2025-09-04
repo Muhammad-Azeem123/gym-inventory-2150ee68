@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AddPurchase } from "./components/AddPurchase";
 import { NewSale } from "./components/NewSale";
+import { ViewProducts } from "./components/ViewProducts";
+import { Login } from "./components/Login";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,10 +21,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/add-purchase" element={<AddPurchase />} />
-          <Route path="/new-sale" element={<NewSale />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/add-purchase" element={<ProtectedRoute><AddPurchase /></ProtectedRoute>} />
+          <Route path="/new-sale" element={<ProtectedRoute><NewSale /></ProtectedRoute>} />
+          <Route path="/view-products" element={<ProtectedRoute><ViewProducts /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

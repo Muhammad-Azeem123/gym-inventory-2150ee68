@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Download, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +75,56 @@ export const NewSale = () => {
     setFormData(prev => ({ ...prev, productId }));
   };
 
-  const totalAmount = selectedProduct ? formData.quantity * selectedProduct.price_per_unit : 0;
+  const totalAmount = formData.quantity * (selectedProduct?.price_per_unit || 0);
+
+  const generateInvoice = () => {
+    if (!selectedProduct) return;
+    
+    const invoiceData = {
+      invoiceNumber: `INV-${Date.now()}`,
+      date: new Date().toLocaleDateString(),
+      productName: selectedProduct.name,
+      category: selectedProduct.category,
+      quantity: formData.quantity,
+      pricePerUnit: selectedProduct.price_per_unit,
+      totalAmount: totalAmount,
+      customerName: formData.customerName || "Customer"
+    };
+
+    const invoiceContent = `
+INVOICE
+=======
+
+Invoice Number: ${invoiceData.invoiceNumber}
+Date: ${invoiceData.date}
+Customer: ${invoiceData.customerName}
+
+ITEM DETAILS:
+Product: ${invoiceData.productName}
+Category: ${invoiceData.category}
+Quantity: ${invoiceData.quantity}
+Price per Unit: Rs. ${invoiceData.pricePerUnit.toFixed(2)}
+
+TOTAL: Rs. ${invoiceData.totalAmount.toFixed(2)}
+
+Thank you for your business!
+    `;
+
+    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${invoiceData.invoiceNumber}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Invoice Generated",
+      description: `Invoice ${invoiceData.invoiceNumber} downloaded successfully`
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +251,7 @@ export const NewSale = () => {
                   <SelectContent>
                     {filteredProducts.map((product) => (
                       <SelectItem key={product.id} value={product.id}>
-                        {product.name} (Stock: {product.quantity}) - ₹{product.price_per_unit}
+                        {product.name} (Stock: {product.quantity}) - Rs. {product.price_per_unit}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -255,15 +304,42 @@ export const NewSale = () => {
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium">Total Amount:</span>
-                  <span className="text-2xl font-bold text-primary">₹{totalAmount.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-primary">Rs. {totalAmount.toFixed(2)}</span>
                 </div>
               </div>
+
+              {/* Invoice Actions */}
+              {selectedProduct && formData.quantity > 0 && (
+                <div className="bg-primary/5 p-4 rounded-lg space-y-3">
+                  <h3 className="font-medium text-primary">Invoice Options</h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={generateInvoice}
+                      className="flex-1"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Generate Invoice
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={generateInvoice}
+                      className="flex-1"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Invoice
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <Button 
                   type="submit" 
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1"
                   disabled={isSubmitting || !selectedProduct}
                 >
                   {isSubmitting ? "Processing..." : "Complete Sale"}

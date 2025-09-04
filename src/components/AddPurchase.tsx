@@ -116,19 +116,37 @@ export const AddPurchase = () => {
               {/* Category */}
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cardio">Cardio Equipment</SelectItem>
-                    <SelectItem value="weights">Weights</SelectItem>
-                    <SelectItem value="accessories">Accessories</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => {
+                      if (value === "custom") {
+                        setFormData({ ...formData, category: "" });
+                      } else {
+                        setFormData({ ...formData, category: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cardio">Cardio Equipment</SelectItem>
+                      <SelectItem value="weights">Weights</SelectItem>
+                      <SelectItem value="accessories">Accessories</SelectItem>
+                      <SelectItem value="supplements">Supplements</SelectItem>
+                      <SelectItem value="apparel">Apparel</SelectItem>
+                      <SelectItem value="custom">Custom Category</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.category === "" && (
+                    <Input
+                      placeholder="Enter custom category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Quantity and Price */}
@@ -145,7 +163,7 @@ export const AddPurchase = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pricePerUnit">Price per Unit (₹)</Label>
+                  <Label htmlFor="pricePerUnit">Price per Unit (Rs.)</Label>
                   <Input
                     id="pricePerUnit"
                     type="number"
@@ -162,7 +180,7 @@ export const AddPurchase = () => {
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium">Total Cost:</span>
-                  <span className="text-2xl font-bold text-primary">₹{totalCost.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-primary">Rs. {totalCost.toFixed(2)}</span>
                 </div>
               </div>
 
