@@ -18,6 +18,7 @@ export const AddPurchase = () => {
     quantity: 0,
     pricePerUnit: 0
   });
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalCost = formData.quantity * formData.pricePerUnit;
@@ -118,11 +119,13 @@ export const AddPurchase = () => {
                 <Label htmlFor="category">Category</Label>
                 <div className="space-y-2">
                   <Select 
-                    value={formData.category || "custom"} 
+                    value={isCustomCategory ? "custom" : (formData.category || "")} 
                     onValueChange={(value) => {
                       if (value === "custom") {
+                        setIsCustomCategory(true);
                         setFormData({ ...formData, category: "" });
                       } else {
+                        setIsCustomCategory(false);
                         setFormData({ ...formData, category: value });
                       }
                     }}
@@ -139,7 +142,7 @@ export const AddPurchase = () => {
                       <SelectItem value="custom">Custom Category</SelectItem>
                     </SelectContent>
                   </Select>
-                  {(formData.category === "" || !["cardio", "weights", "accessories", "supplements", "apparel"].includes(formData.category)) && (
+                  {isCustomCategory && (
                     <Input
                       placeholder="Enter custom category"
                       value={formData.category}

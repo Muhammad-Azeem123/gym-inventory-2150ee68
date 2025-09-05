@@ -49,7 +49,7 @@ export const Login = () => {
               <Package className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Inventory Management</CardTitle>
+          <CardTitle className="text-2xl font-bold">Gym Inventory Management</CardTitle>
           <p className="text-muted-foreground">Sign in to manage your inventory</p>
         </CardHeader>
         <CardContent>

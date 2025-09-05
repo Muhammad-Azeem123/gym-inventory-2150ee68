@@ -135,46 +135,59 @@ export const GymDashboard = () => {
       {/* Header with Navigation */}
       <div className="mb-8">
         <div className="flex flex-col gap-4 mb-4">
-          {/* Top row with logo and logout */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Package className="w-6 h-6 text-primary" />
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Inventory Management</h1>
+        {/* Header with logo and navigation */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <Package className="w-6 h-6 text-primary" />
             </div>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Gym Inventory Management</h1>
           </div>
           
-          {/* Navigation buttons row */}
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={() => navigate("/add-purchase")} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Add Purchase
-            </Button>
-            <Button onClick={() => navigate("/new-sale")} variant="secondary" className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              New Sale
-            </Button>
-            <Button onClick={() => navigate("/view-products")} variant="outline" className="flex items-center gap-2">
-              <Eye className="w-4 h-4" />
-              View Products
-            </Button>
+          {/* Right side navigation */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+            {/* Search bar with clear button */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-1 top-1 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Navigation buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => navigate("/add-purchase")} size="sm" className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Purchase
+              </Button>
+              <Button onClick={() => navigate("/new-sale")} variant="secondary" size="sm" className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                New Sale
+              </Button>
+              <Button onClick={() => navigate("/view-products")} variant="outline" size="sm" className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                View Products
+              </Button>
+              <Button variant="outline" onClick={handleLogout} size="sm" className="flex items-center gap-2">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          
-          {/* Search bar */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        </div>
         </div>
         <p className="text-muted-foreground">Monitor and manage your product inventory</p>
       </div>
@@ -218,9 +231,12 @@ export const GymDashboard = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Products</SelectItem>
-                  <SelectItem value="purchased">From Purchases</SelectItem>
-                  <SelectItem value="sold">From Sales</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
