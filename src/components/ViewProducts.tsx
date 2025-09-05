@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Package, Edit, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Package, Edit, Trash2, Plus, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,7 @@ export const ViewProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -40,12 +41,23 @@ export const ViewProducts = () => {
   }, []);
 
   useEffect(() => {
-    if (categoryFilter === "all") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter(product => product.category === categoryFilter));
+    let filtered = products;
+    
+    // Filter by category
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(product => product.category === categoryFilter);
     }
-  }, [products, categoryFilter]);
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    setFilteredProducts(filtered);
+  }, [products, categoryFilter, searchQuery]);
 
   const fetchProducts = async () => {
     const { data, error } = await supabase
@@ -156,6 +168,15 @@ export const ViewProducts = () => {
                 Product Management
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue placeholder="Filter by category" />

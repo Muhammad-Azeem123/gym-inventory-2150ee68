@@ -231,9 +231,11 @@ Thank you for your business!
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="cardio">Cardio Equipment</SelectItem>
-                    <SelectItem value="weights">Weights</SelectItem>
-                    <SelectItem value="accessories">Accessories</SelectItem>
+                    {Array.from(new Set(products.map(p => p.category))).map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -118,7 +118,7 @@ export const AddPurchase = () => {
                 <Label htmlFor="category">Category</Label>
                 <div className="space-y-2">
                   <Select 
-                    value={formData.category} 
+                    value={formData.category || "custom"} 
                     onValueChange={(value) => {
                       if (value === "custom") {
                         setFormData({ ...formData, category: "" });
@@ -139,11 +139,12 @@ export const AddPurchase = () => {
                       <SelectItem value="custom">Custom Category</SelectItem>
                     </SelectContent>
                   </Select>
-                  {formData.category === "" && (
+                  {(formData.category === "" || !["cardio", "weights", "accessories", "supplements", "apparel"].includes(formData.category)) && (
                     <Input
                       placeholder="Enter custom category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      required
                     />
                   )}
                 </div>

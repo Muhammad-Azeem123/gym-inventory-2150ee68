@@ -27,7 +27,8 @@ export const Login = () => {
         title: "Login Successful",
         description: "Welcome to Inventory Management System",
       });
-      navigate("/");
+      // Use window.location for immediate redirect without refresh
+      window.location.href = "/";
     } else {
       toast({
         title: "Login Failed",
