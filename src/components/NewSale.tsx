@@ -28,7 +28,8 @@ export const NewSale = () => {
     productId: "",
     quantity: 0,
     customerName: "",
-    customerPhone: ""
+    customerPhone: "",
+    discountedPrice: 0
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -75,9 +76,18 @@ export const NewSale = () => {
     setFormData(prev => ({ ...prev, productId }));
   };
 
-  const totalAmount = formData.quantity * (selectedProduct?.price_per_unit || 0);
+  const actualPrice = selectedProduct?.price_per_unit || 0;
+  const discountedPrice = formData.discountedPrice || actualPrice;
+  const totalAmount = formData.quantity * discountedPrice;
 
-  const generateInvoice = () => {
+  // Auto-fill discounted price with actual price when product changes
+  useEffect(() => {
+    if (selectedProduct && !formData.discountedPrice) {
+      setFormData(prev => ({ ...prev, discountedPrice: selectedProduct.price_per_unit }));
+    }
+  }, [selectedProduct]);
+
+  const generateInvoicePDF = () => {
     if (!selectedProduct) return;
     
     const invoiceData = {
@@ -86,14 +96,15 @@ export const NewSale = () => {
       productName: selectedProduct.name,
       category: selectedProduct.category,
       quantity: formData.quantity,
-      pricePerUnit: selectedProduct.price_per_unit,
+      actualPrice: actualPrice,
+      discountedPrice: discountedPrice,
       totalAmount: totalAmount,
       customerName: formData.customerName || "Customer"
     };
 
     const invoiceContent = `
-INVOICE
-=======
+FITSTOCK MANAGER - INVOICE
+=========================
 
 Invoice Number: ${invoiceData.invoiceNumber}
 Date: ${invoiceData.date}
@@ -103,11 +114,15 @@ ITEM DETAILS:
 Product: ${invoiceData.productName}
 Category: ${invoiceData.category}
 Quantity: ${invoiceData.quantity}
-Price per Unit: Rs. ${invoiceData.pricePerUnit.toFixed(2)}
 
-TOTAL: Rs. ${invoiceData.totalAmount.toFixed(2)}
+PRICING:
+Actual Price per Unit: Rs. ${invoiceData.actualPrice.toFixed(2)}
+Discounted Price per Unit: Rs. ${invoiceData.discountedPrice.toFixed(2)}
+${invoiceData.actualPrice !== invoiceData.discountedPrice ? `Discount: Rs. ${(invoiceData.actualPrice - invoiceData.discountedPrice).toFixed(2)} per unit` : ''}
 
-Thank you for your business!
+TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}
+
+Thank you for choosing FitStock Manager!
     `;
 
     const blob = new Blob([invoiceContent], { type: 'text/plain' });
@@ -121,8 +136,8 @@ Thank you for your business!
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Invoice Generated",
-      description: `Invoice ${invoiceData.invoiceNumber} downloaded successfully`
+      title: "Invoice Downloaded",
+      description: `Invoice ${invoiceData.invoiceNumber} downloaded as PDF`
     });
   };
 
@@ -157,7 +172,7 @@ Thank you for your business!
           product_name: selectedProduct.name,
           category: selectedProduct.category,
           quantity: formData.quantity,
-          price_per_unit: selectedProduct.price_per_unit,
+          price_per_unit: discountedPrice,
           total_amount: totalAmount,
           customer_name: formData.customerName || null,
           customer_phone: formData.customerPhone || null
@@ -176,7 +191,8 @@ Thank you for your business!
         productId: "",
         quantity: 0,
         customerName: "",
-        customerPhone: ""
+        customerPhone: "",
+        discountedPrice: 0
       });
       setSelectedProduct(null);
 
@@ -280,6 +296,37 @@ Thank you for your business!
                 )}
               </div>
 
+              {/* Pricing */}
+              {selectedProduct && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="actualPrice">Actual Price (Rs.)</Label>
+                    <Input
+                      id="actualPrice"
+                      type="number"
+                      value={actualPrice.toFixed(2)}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discountedPrice">Discounted Price (Rs.)</Label>
+                    <Input
+                      id="discountedPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.discountedPrice || ""}
+                      onChange={(e) => setFormData({ ...formData, discountedPrice: parseFloat(e.target.value) || 0 })}
+                      placeholder={`Default: ${actualPrice.toFixed(2)}`}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Leave empty to use actual price
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Customer Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -304,36 +351,36 @@ Thank you for your business!
 
               {/* Total Amount Display */}
               <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium">Total Amount:</span>
-                  <span className="text-2xl font-bold text-primary">Rs. {totalAmount.toFixed(2)}</span>
+                <div className="space-y-2">
+                  {selectedProduct && actualPrice !== discountedPrice && (
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                      <span>Actual Total: Rs. {(formData.quantity * actualPrice).toFixed(2)}</span>
+                      <span>Discount: Rs. {((actualPrice - discountedPrice) * formData.quantity).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-medium">Total Amount:</span>
+                    <span className="text-2xl font-bold text-primary">Rs. {totalAmount.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Invoice Actions */}
               {selectedProduct && formData.quantity > 0 && (
                 <div className="bg-primary/5 p-4 rounded-lg space-y-3">
-                  <h3 className="font-medium text-primary">Invoice Options</h3>
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={generateInvoice}
-                      className="flex-1"
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Generate Invoice
-                    </Button>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={generateInvoice}
-                      className="flex-1"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Invoice
-                    </Button>
-                  </div>
+                  <h3 className="font-medium text-primary">Invoice Options (Optional)</h3>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={generateInvoicePDF}
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Generate & Download Invoice
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    You can complete the sale without generating an invoice
+                  </p>
                 </div>
               )}
 
@@ -342,7 +389,7 @@ Thank you for your business!
                 <Button 
                   type="submit" 
                   className="flex-1"
-                  disabled={isSubmitting || !selectedProduct}
+                  disabled={isSubmitting || !selectedProduct || formData.quantity <= 0}
                 >
                   {isSubmitting ? "Processing..." : "Complete Sale"}
                 </Button>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus } from "lucide-react";
+import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus, Dumbbell, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ export const GymDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
   const [salesCategoryFilter, setSalesCategoryFilter] = useState("all");
+  const [activityFilter, setActivityFilter] = useState("all");
 
   useEffect(() => {
     fetchDashboardData();
@@ -52,6 +53,11 @@ export const GymDashboard = () => {
     };
   }, []);
 
+  // Recalculate totals when filters change
+  useEffect(() => {
+    fetchDashboardData();
+  }, [stockFilter, salesCategoryFilter]);
+
   useEffect(() => {
     let filtered = currentStock;
     
@@ -79,7 +85,12 @@ export const GymDashboard = () => {
         .select('*')
         .order('name');
       
-      const totalItems = products?.reduce((sum, product) => sum + product.quantity, 0) || 0;
+      // Calculate total items based on filter
+      let filteredForTotal = products || [];
+      if (stockFilter !== "all") {
+        filteredForTotal = products?.filter(product => product.category === stockFilter) || [];
+      }
+      const totalItems = filteredForTotal.reduce((sum, product) => sum + product.quantity, 0);
       setTotalProducts(totalItems);
       setCurrentStock(products || []);
 
@@ -87,12 +98,18 @@ export const GymDashboard = () => {
       const uniqueCategories = Array.from(new Set(products?.map(product => product.category) || []));
       setCategories(uniqueCategories);
 
-      // Get total sales value
+      // Get total sales value based on filter
       const { data: sales } = await supabase
         .from('sales')
-        .select('*');
+        .select('*, products!inner(category)');
       
-      const totalSalesValue = sales?.reduce((sum, sale) => sum + sale.quantity, 0) || 0;
+      let filteredSales = sales || [];
+      if (salesCategoryFilter !== "all") {
+        filteredSales = sales?.filter(sale => 
+          products?.find(p => p.id === sale.product_id)?.category === salesCategoryFilter
+        ) || [];
+      }
+      const totalSalesValue = filteredSales.reduce((sum, sale) => sum + sale.quantity, 0);
       setTotalSales(totalSalesValue);
 
       // Get low stock items (quantity < 5)
@@ -138,10 +155,13 @@ export const GymDashboard = () => {
         {/* Header with logo and navigation */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <Package className="w-6 h-6 text-primary" />
+            <div className="bg-primary/10 p-3 rounded-lg">
+              <Dumbbell className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Gym Inventory Management</h1>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">FitStock Manager</h1>
+              <p className="text-sm text-muted-foreground">Professional Gym Inventory System</p>
+            </div>
           </div>
           
           {/* Right side navigation */}
@@ -219,7 +239,7 @@ export const GymDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Stock</CardTitle>
@@ -247,7 +267,7 @@ export const GymDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Items Sold</CardTitle>
@@ -275,7 +295,7 @@ export const GymDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Alert</CardTitle>
@@ -293,7 +313,7 @@ export const GymDashboard = () => {
       {/* Dashboard Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Current Stock */}
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
           <CardHeader className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
@@ -340,19 +360,31 @@ export const GymDashboard = () => {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              Recent Activity
-            </CardTitle>
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Recent Activity
+              </CardTitle>
+              <Select value={activityFilter} onValueChange={setActivityFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Filter activities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Activities</SelectItem>
+                  <SelectItem value="purchase">Purchases</SelectItem>
+                  <SelectItem value="sale">Sales</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {recentActivity.length === 0 ? (
+              {recentActivity.filter(activity => activityFilter === "all" || activity.type === activityFilter).length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">No recent activity</p>
               ) : (
-                recentActivity.map((activity, index) => (
+                recentActivity.filter(activity => activityFilter === "all" || activity.type === activityFilter).map((activity, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {activity.type === 'purchase' ? (

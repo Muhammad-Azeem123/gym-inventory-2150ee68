@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, LogIn } from "lucide-react";
+import { Dumbbell, LogIn } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,11 +46,11 @@ export const Login = () => {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="bg-primary/10 p-3 rounded-full">
-              <Package className="w-8 h-8 text-primary" />
+              <Dumbbell className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Gym Inventory Management</CardTitle>
-          <p className="text-muted-foreground">Sign in to manage your inventory</p>
+          <CardTitle className="text-2xl font-bold">FitStock Manager</CardTitle>
+          <p className="text-muted-foreground">Professional Gym Inventory System</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
