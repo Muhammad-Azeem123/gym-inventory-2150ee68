@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ShoppingCart, Download, FileText } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
 
 interface Product {
   id: string;
@@ -102,38 +103,54 @@ export const NewSale = () => {
       customerName: formData.customerName || "Customer"
     };
 
-    const invoiceContent = `
-FITSTOCK MANAGER - INVOICE
-=========================
-
-Invoice Number: ${invoiceData.invoiceNumber}
-Date: ${invoiceData.date}
-Customer: ${invoiceData.customerName}
-
-ITEM DETAILS:
-Product: ${invoiceData.productName}
-Category: ${invoiceData.category}
-Quantity: ${invoiceData.quantity}
-
-PRICING:
-Actual Price per Unit: Rs. ${invoiceData.actualPrice.toFixed(2)}
-Discounted Price per Unit: Rs. ${invoiceData.discountedPrice.toFixed(2)}
-${invoiceData.actualPrice !== invoiceData.discountedPrice ? `Discount: Rs. ${(invoiceData.actualPrice - invoiceData.discountedPrice).toFixed(2)} per unit` : ''}
-
-TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}
-
-Thank you for choosing FitStock Manager!
-    `;
-
-    const blob = new Blob([invoiceContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `invoice-${invoiceData.invoiceNumber}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    // Create PDF using jsPDF
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('FITSTOCK MANAGER', 20, 30);
+    doc.setFontSize(16);
+    doc.text('INVOICE', 20, 45);
+    
+    // Invoice details
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Invoice Number: ${invoiceData.invoiceNumber}`, 20, 65);
+    doc.text(`Date: ${invoiceData.date}`, 20, 75);
+    doc.text(`Customer: ${invoiceData.customerName}`, 20, 85);
+    
+    // Item details
+    doc.setFont(undefined, 'bold');
+    doc.text('ITEM DETAILS:', 20, 105);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Product: ${invoiceData.productName}`, 20, 115);
+    doc.text(`Category: ${invoiceData.category}`, 20, 125);
+    doc.text(`Quantity: ${invoiceData.quantity}`, 20, 135);
+    
+    // Pricing
+    doc.setFont(undefined, 'bold');
+    doc.text('PRICING:', 20, 155);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Actual Price per Unit: Rs. ${invoiceData.actualPrice.toFixed(2)}`, 20, 165);
+    doc.text(`Discounted Price per Unit: Rs. ${invoiceData.discountedPrice.toFixed(2)}`, 20, 175);
+    
+    if (invoiceData.actualPrice !== invoiceData.discountedPrice) {
+      doc.text(`Discount: Rs. ${(invoiceData.actualPrice - invoiceData.discountedPrice).toFixed(2)} per unit`, 20, 185);
+    }
+    
+    // Total
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(`TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}`, 20, 205);
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Thank you for choosing FitStock Manager!', 20, 250);
+    
+    // Save the PDF
+    doc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
 
     toast({
       title: "Invoice Downloaded",
@@ -170,15 +187,15 @@ Thank you for choosing FitStock Manager!
         .insert({
           product_id: selectedProduct.id,
           product_name: selectedProduct.name,
-          category: selectedProduct.category,
           quantity: formData.quantity,
           price_per_unit: discountedPrice,
-          total_amount: totalAmount,
-          customer_name: formData.customerName || null,
-          customer_phone: formData.customerPhone || null
+          total_amount: totalAmount
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sale insertion error:', error);
+        throw error;
+      }
 
       toast({
         title: "Sale Completed",
