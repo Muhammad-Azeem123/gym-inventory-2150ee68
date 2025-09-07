@@ -21,7 +21,7 @@ export const Login = () => {
     setIsLoading(true);
 
     // Check default credentials
-    if (formData.username === "admin" && formData.password === "admin123") {
+    if (formData.username === "admin" && formData.password === "admin2580") {
       localStorage.setItem("isAuthenticated", "true");
       toast({
         title: "Login Successful",
@@ -85,13 +85,6 @@ export const Login = () => {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              <strong>Default Credentials:</strong><br/>
-              Username: admin<br/>
-              Password: admin123
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
