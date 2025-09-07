@@ -230,12 +230,25 @@ export const GymDashboard = () => {
           </Button>
           <AlertDescription className="text-destructive pr-8">
             <strong>Low Stock Alert:</strong> {lowStockAlert.length} product(s) have less than 5 units in stock:
-            <div className="mt-2 flex flex-wrap gap-2">
-              {lowStockAlert.map((item, index) => (
-                <Badge key={index} variant="destructive" className="text-xs">
-                  {item.name} ({item.quantity} left)
-                </Badge>
-              ))}
+            <div className="mt-2 space-y-2">
+              {/* Category-wise grouping */}
+              {Array.from(new Set(lowStockAlert.map(item => item.category))).map((category) => {
+                const categoryItems = lowStockAlert.filter(item => item.category === category);
+                return (
+                  <div key={category} className="space-y-1">
+                    <Badge variant="outline" className="text-xs font-medium border-destructive/30 text-destructive">
+                      {category} ({categoryItems.length} items)
+                    </Badge>
+                    <div className="flex flex-wrap gap-1 ml-2">
+                      {categoryItems.map((item, index) => (
+                        <Badge key={index} variant="destructive" className="text-xs">
+                          {item.name} ({item.quantity} left)
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </AlertDescription>
         </Alert>
