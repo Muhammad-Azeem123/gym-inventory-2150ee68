@@ -322,6 +322,18 @@ export const GymDashboard = () => {
           <CardContent>
             <div className="text-2xl md:text-3xl font-bold text-destructive">{lowStockItems}</div>
             <p className="text-sm text-muted-foreground mt-1">Items below 5 units</p>
+            {lowStockAlert.length > 0 && (
+              <div className="mt-3 space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Categories affected:</p>
+                <div className="flex flex-wrap gap-1">
+                  {Array.from(new Set(lowStockAlert.map(item => item.category))).map((category) => (
+                    <Badge key={category} variant="outline" className="text-xs px-2 py-0.5 border-destructive/30 text-destructive">
+                      {category}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
