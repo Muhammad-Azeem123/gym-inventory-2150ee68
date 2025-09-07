@@ -177,10 +177,12 @@ export const GymDashboard = () => {
               />
               {searchQuery && (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
+                  aria-label="Clear search"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-1 top-1 h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -217,10 +219,12 @@ export const GymDashboard = () => {
         <Alert className="mb-6 border-destructive/50 bg-destructive/10 relative">
           <AlertTriangle className="h-4 w-4 text-destructive" />
           <Button 
+            type="button"
             variant="ghost" 
             size="sm" 
+            aria-label="Dismiss low stock alert"
             onClick={() => setShowLowStockAlert(false)}
-            className="absolute right-2 top-2 h-6 w-6 p-0 text-destructive hover:text-destructive/80"
+            className="absolute right-2 top-2 h-6 w-6 p-0 text-destructive hover:text-destructive/80 hover:bg-transparent bg-transparent"
           >
             <X className="h-4 w-4" />
           </Button>
