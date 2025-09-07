@@ -214,45 +214,7 @@ export const GymDashboard = () => {
         <p className="text-muted-foreground">Monitor and manage your product inventory</p>
       </div>
 
-      {/* Low Stock Alert */}
-      {lowStockAlert.length > 0 && showLowStockAlert && (
-        <Alert className="mb-6 border-destructive/50 bg-destructive/10 relative">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-          <Button 
-            type="button"
-            variant="ghost" 
-            size="sm" 
-            aria-label="Dismiss low stock alert"
-            onClick={() => setShowLowStockAlert(false)}
-            className="absolute right-2 top-2 h-6 w-6 p-0 text-destructive hover:text-destructive/80 hover:bg-transparent bg-transparent"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <AlertDescription className="text-destructive pr-8">
-            <strong>Low Stock Alert:</strong> {lowStockAlert.length} product(s) have less than 5 units in stock:
-            <div className="mt-2 space-y-2">
-              {/* Category-wise grouping */}
-              {Array.from(new Set(lowStockAlert.map(item => item.category))).map((category) => {
-                const categoryItems = lowStockAlert.filter(item => item.category === category);
-                return (
-                  <div key={category} className="space-y-1">
-                    <Badge variant="outline" className="text-xs font-medium border-destructive/30 text-destructive">
-                      {category} ({categoryItems.length} items)
-                    </Badge>
-                    <div className="flex flex-wrap gap-1 ml-2">
-                      {categoryItems.map((item, index) => (
-                        <Badge key={index} variant="destructive" className="text-xs">
-                          {item.name} ({item.quantity} left)
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Low Stock Alert - Hidden since categories are shown in the card */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
