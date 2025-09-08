@@ -333,12 +333,24 @@ export const NewSale = () => {
                       type="number"
                       step="0.01"
                       min="0"
+                      max={actualPrice}
                       value={formData.discountedPrice || ""}
-                      onChange={(e) => setFormData({ ...formData, discountedPrice: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        if (value <= actualPrice) {
+                          setFormData({ ...formData, discountedPrice: value });
+                        } else {
+                          toast({
+                            title: "Invalid Price",
+                            description: "Discounted price cannot exceed the actual price.",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
                       placeholder={`Default: ${actualPrice.toFixed(2)}`}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Leave empty to use actual price
+                      Must be less than or equal to actual price (Rs. {actualPrice.toFixed(2)})
                     </p>
                   </div>
                 </div>
