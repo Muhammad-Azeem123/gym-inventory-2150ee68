@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus, Dumbbell, Filter } from "lucide-react";
+import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus, Dumbbell, Filter, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ export const GymDashboard = () => {
   const [stockFilter, setStockFilter] = useState("all");
   const [salesCategoryFilter, setSalesCategoryFilter] = useState("all");
   const [activityFilter, setActivityFilter] = useState("all");
+  const [categoryStats, setCategoryStats] = useState<{ name: string; count: number; }[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -94,9 +95,16 @@ export const GymDashboard = () => {
       setTotalProducts(totalItems);
       setCurrentStock(products || []);
 
-      // Extract unique categories
+      // Extract unique categories and calculate stats
       const uniqueCategories = Array.from(new Set(products?.map(product => product.category) || []));
       setCategories(uniqueCategories);
+      
+      // Calculate category statistics
+      const categoryStats = uniqueCategories.map(category => ({
+        name: category,
+        count: products?.filter(p => p.category === category).length || 0
+      }));
+      setCategoryStats(categoryStats);
 
       // Get total sales value based on filter
       const { data: sales } = await supabase
@@ -202,6 +210,10 @@ export const GymDashboard = () => {
               <Button onClick={() => navigate("/view-products")} variant="outline" size="sm" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 View Products
+              </Button>
+              <Button onClick={() => navigate("/categories")} variant="outline" size="sm" className="flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                Categories
               </Button>
               <Button variant="outline" onClick={handleLogout} size="sm" className="flex items-center gap-2">
                 <LogOut className="w-4 h-4" />
@@ -404,6 +416,84 @@ export const GymDashboard = () => {
                   </div>
                 ))
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Information Cards */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Category Management Card */}
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
+          <CardHeader className="space-y-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-primary" />
+                Category Management
+              </CardTitle>
+              <Button onClick={() => navigate("/categories")} size="sm" variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Manage
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+              {categoryStats.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-2">No categories found</p>
+                  <Button onClick={() => navigate("/categories")} size="sm">
+                    Create First Category
+                  </Button>
+                </div>
+              ) : (
+                categoryStats.map((category, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                    <div>
+                      <p className="font-medium text-foreground">{category.name}</p>
+                      <p className="text-sm text-muted-foreground">Active category</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-foreground">{category.count}</p>
+                      <p className="text-sm text-muted-foreground">products</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions Card */}
+        <Card className="border shadow-lg bg-card/50 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Button onClick={() => navigate("/add-purchase")} className="flex items-center gap-2 h-auto p-4 flex-col">
+                <Package className="w-6 h-6" />
+                <span>Add Purchase</span>
+                <span className="text-xs opacity-70">Stock inventory</span>
+              </Button>
+              <Button onClick={() => navigate("/new-sale")} variant="secondary" className="flex items-center gap-2 h-auto p-4 flex-col">
+                <ShoppingCart className="w-6 h-6" />
+                <span>New Sale</span>
+                <span className="text-xs opacity-70">Record sale</span>
+              </Button>
+              <Button onClick={() => navigate("/view-products")} variant="outline" className="flex items-center gap-2 h-auto p-4 flex-col">
+                <Eye className="w-6 h-6" />
+                <span>View Products</span>
+                <span className="text-xs opacity-70">Manage inventory</span>
+              </Button>
+              <Button onClick={() => navigate("/categories")} variant="outline" className="flex items-center gap-2 h-auto p-4 flex-col">
+                <FolderOpen className="w-6 h-6" />
+                <span>Categories</span>
+                <span className="text-xs opacity-70">Manage categories</span>
+              </Button>
             </div>
           </CardContent>
         </Card>

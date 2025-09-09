@@ -8,6 +8,7 @@ import { ArrowLeft, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories } from "@/hooks/useCategories";
 
 export const AddPurchase = () => {
   const navigate = useNavigate();
@@ -20,29 +21,9 @@ export const AddPurchase = () => {
   });
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const { categories, addCategory } = useCategories();
 
   const totalCost = formData.quantity * formData.pricePerUnit;
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('category')
-      .order('category');
-
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return;
-    }
-
-    // Extract unique categories
-    const uniqueCategories = Array.from(new Set(data?.map(product => product.category) || []));
-    setCategories(uniqueCategories);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +65,6 @@ export const AddPurchase = () => {
         pricePerUnit: 0
       });
 
-      // Refresh categories after successful add
-      fetchCategories();
-      
       // Navigate back after a short delay
       setTimeout(() => navigate("/"), 1500);
     } catch (error) {
@@ -159,8 +137,8 @@ export const AddPurchase = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
                         </SelectItem>
                       ))}
                       <SelectItem value="custom">Custom Category</SelectItem>
@@ -170,7 +148,15 @@ export const AddPurchase = () => {
                     <Input
                       placeholder="Enter custom category"
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={async (e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, category: value });
+                        
+                        // Auto-add category when user types and it's not empty
+                        if (value.trim() && !categories.some(cat => cat.name === value.trim())) {
+                          await addCategory(value.trim());
+                        }
+                      }}
                       required
                     />
                   )}

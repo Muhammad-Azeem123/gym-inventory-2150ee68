@@ -10,6 +10,7 @@ import { ArrowLeft, Package, Edit, Trash2, Plus, Search, X } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories } from "@/hooks/useCategories";
 
 interface Product {
   id: string;
@@ -25,7 +26,7 @@ export const ViewProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [categories, setCategories] = useState<string[]>([]);
+  const { categories } = useCategories();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
@@ -71,10 +72,6 @@ export const ViewProducts = () => {
     }
 
     setProducts(data || []);
-    
-    // Extract unique categories
-    const uniqueCategories = Array.from(new Set(data?.map(product => product.category) || []));
-    setCategories(uniqueCategories);
   };
 
   const handleEdit = (product: Product) => {
@@ -196,8 +193,8 @@ export const ViewProducts = () => {
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

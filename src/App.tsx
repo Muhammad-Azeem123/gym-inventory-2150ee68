@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import { AddPurchase } from "./components/AddPurchase";
 import { NewSale } from "./components/NewSale";
 import { ViewProducts } from "./components/ViewProducts";
+import { CategoryManager } from "./components/CategoryManager";
 import { Login } from "./components/Login";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/add-purchase" element={<ProtectedRoute><AddPurchase /></ProtectedRoute>} />
           <Route path="/new-sale" element={<ProtectedRoute><NewSale /></ProtectedRoute>} />
           <Route path="/view-products" element={<ProtectedRoute><ViewProducts /></ProtectedRoute>} />
+          <Route path="/categories" element={<ProtectedRoute><CategoryManager /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

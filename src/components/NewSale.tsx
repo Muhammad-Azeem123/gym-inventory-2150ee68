@@ -8,6 +8,7 @@ import { ArrowLeft, ShoppingCart, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories } from "@/hooks/useCategories";
 import jsPDF from 'jspdf';
 
 interface Product {
@@ -24,6 +25,7 @@ export const NewSale = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { categories } = useCategories();
   const [formData, setFormData] = useState({
     category: "all",
     productId: "",
@@ -264,9 +266,9 @@ export const NewSale = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {Array.from(new Set(products.map(p => p.category))).map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
