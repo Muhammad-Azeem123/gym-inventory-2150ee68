@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +20,29 @@ export const AddPurchase = () => {
   });
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const totalCost = formData.quantity * formData.pricePerUnit;
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .order('category');
+
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return;
+    }
+
+    // Extract unique categories
+    const uniqueCategories = Array.from(new Set(data?.map(product => product.category) || []));
+    setCategories(uniqueCategories);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +84,9 @@ export const AddPurchase = () => {
         pricePerUnit: 0
       });
 
+      // Refresh categories after successful add
+      fetchCategories();
+      
       // Navigate back after a short delay
       setTimeout(() => navigate("/"), 1500);
     } catch (error) {
@@ -134,11 +158,11 @@ export const AddPurchase = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cardio">Cardio Equipment</SelectItem>
-                      <SelectItem value="weights">Weights</SelectItem>
-                      <SelectItem value="accessories">Accessories</SelectItem>
-                      <SelectItem value="supplements">Supplements</SelectItem>
-                      <SelectItem value="apparel">Apparel</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
                       <SelectItem value="custom">Custom Category</SelectItem>
                     </SelectContent>
                   </Select>
