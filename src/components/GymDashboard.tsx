@@ -107,18 +107,16 @@ export const GymDashboard = () => {
       setCategoryStats(categoryStats);
 
       // Get total sales value based on filter
-      const { data: salesWithItems } = await supabase
+      const { data: saleItems } = await supabase
         .from('sale_items')
-        .select(`
-          *,
-          products (category)
-        `);
+        .select('*, products(category)');
       
-      let filteredSalesItems = salesWithItems || [];
+      let filteredSalesItems = saleItems || [];
       if (salesCategoryFilter !== "all") {
-        filteredSalesItems = salesWithItems?.filter(item => 
-          item.products?.category === salesCategoryFilter
-        ) || [];
+        filteredSalesItems = saleItems?.filter(item => {
+          const product = products?.find(p => p.id === item.product_id);
+          return product?.category === salesCategoryFilter;
+        }) || [];
       }
       const totalSalesValue = filteredSalesItems.reduce((sum, item) => sum + item.quantity, 0);
       setTotalSales(totalSalesValue);
