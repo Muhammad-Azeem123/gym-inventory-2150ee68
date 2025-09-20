@@ -151,9 +151,13 @@ export const GymDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   return (
