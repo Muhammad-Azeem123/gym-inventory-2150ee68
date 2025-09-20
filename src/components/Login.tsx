@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dumbbell, LogIn, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -18,75 +17,23 @@ export const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-    checkAuth();
-  }, [navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      // For the existing admin credentials, use a fixed email format
-      const email = formData.username === "admin" ? "admin@fitstock.com" : `${formData.username}@fitstock.com`;
-      
-      // Try to sign in first
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: formData.password,
-      });
-
-      if (signInError && signInError.message.includes("Invalid login credentials")) {
-        // If user doesn't exist and it's the admin account, create it
-        if (formData.username === "admin" && formData.password === "admin2580") {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email,
-            password: formData.password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/`
-            }
-          });
-
-          if (signUpError) {
-            throw signUpError;
-          }
-
-          // If signup was successful, try signing in again
-          if (signUpData.user) {
-            const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-              email,
-              password: formData.password,
-            });
-            
-            if (secondSignInError) {
-              throw secondSignInError;
-            }
-          }
-        } else {
-          throw signInError;
-        }
-      } else if (signInError) {
-        throw signInError;
-      }
-
+    // Check default credentials
+    if (formData.username === "admin" && formData.password === "admin2580") {
+      localStorage.setItem("isAuthenticated", "true");
       toast({
         title: "Login Successful",
-        description: "Welcome to FitStock Manager",
+        description: "Welcome to Inventory Management System",
       });
-      
-      navigate("/");
-    } catch (error: any) {
-      console.error("Auth error:", error);
+      // Use window.location for immediate redirect without refresh
+      window.location.href = "/";
+    } else {
       toast({
         title: "Login Failed",
-        description: error.message || "Invalid username or password",
+        description: "Invalid username or password",
         variant: "destructive"
       });
     }
