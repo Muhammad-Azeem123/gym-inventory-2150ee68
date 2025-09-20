@@ -134,10 +134,6 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           id: string
-          price_per_unit: number
-          product_id: string | null
-          product_name: string
-          quantity: number
           sale_date: string | null
           total_amount: number
         }
@@ -146,10 +142,6 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
-          price_per_unit: number
-          product_id?: string | null
-          product_name: string
-          quantity: number
           sale_date?: string | null
           total_amount: number
         }
@@ -158,22 +150,10 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
-          price_per_unit?: number
-          product_id?: string | null
-          product_name?: string
-          quantity?: number
           sale_date?: string | null
           total_amount?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "sales_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

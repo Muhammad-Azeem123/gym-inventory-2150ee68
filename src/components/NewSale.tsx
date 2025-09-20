@@ -389,65 +389,100 @@ export const NewSale = () => {
                 </Select>
               </div>
 
-              {/* Quantity */}
-              <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  max={selectedProduct?.quantity || 1}
-                  value={formData.quantity || ""}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-                  disabled={!selectedProduct}
-                  required
-                />
-                {selectedProduct && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Available stock: {selectedProduct.quantity} units
-                  </p>
-                )}
+              {/* Quantity and Add to Cart */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="quantity">Quantity</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max={selectedProduct?.quantity || 1}
+                    value={formData.quantity || ""}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                    disabled={!selectedProduct}
+                  />
+                  {selectedProduct && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Available: {selectedProduct.quantity} units
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="discountedPrice">Price per Unit (Rs.)</Label>
+                  <Input
+                    id="discountedPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={actualPrice}
+                    value={formData.discountedPrice || ""}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      if (value <= actualPrice) {
+                        setFormData({ ...formData, discountedPrice: value });
+                      } else {
+                        toast({
+                          title: "Invalid Price",
+                          description: "Price cannot exceed the actual price.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                    placeholder={`Default: ${actualPrice.toFixed(2)}`}
+                    disabled={!selectedProduct}
+                  />
+                  {selectedProduct && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Original: Rs. {actualPrice.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    type="button"
+                    onClick={addToCart}
+                    disabled={!selectedProduct || formData.quantity <= 0}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
+                </div>
               </div>
 
-              {/* Pricing */}
-              {selectedProduct && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="actualPrice">Actual Price (Rs.)</Label>
-                    <Input
-                      id="actualPrice"
-                      type="number"
-                      value={actualPrice.toFixed(2)}
-                      disabled
-                      className="bg-muted"
-                    />
+              {/* Cart Items */}
+              {cartItems.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-lg font-medium">Cart Items</Label>
+                    <span className="text-sm text-muted-foreground">{cartItems.length} items</span>
                   </div>
-                  <div>
-                    <Label htmlFor="discountedPrice">Discounted Price (Rs.)</Label>
-                    <Input
-                      id="discountedPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max={actualPrice}
-                      value={formData.discountedPrice || ""}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        if (value <= actualPrice) {
-                          setFormData({ ...formData, discountedPrice: value });
-                        } else {
-                          toast({
-                            title: "Invalid Price",
-                            description: "Discounted price cannot exceed the actual price.",
-                            variant: "destructive"
-                          });
-                        }
-                      }}
-                      placeholder={`Default: ${actualPrice.toFixed(2)}`}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Must be less than or equal to actual price (Rs. {actualPrice.toFixed(2)})
-                    </p>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.product_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.quantity} x Rs. {item.discounted_price.toFixed(2)} = Rs. {item.total_amount.toFixed(2)}
+                          </p>
+                          {item.price_per_unit !== item.discounted_price && (
+                            <p className="text-xs text-green-600">
+                              Discount: Rs. {((item.price_per_unit - item.discounted_price) * item.quantity).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -475,23 +510,19 @@ export const NewSale = () => {
               </div>
 
               {/* Total Amount Display */}
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="space-y-2">
-                  {selectedProduct && actualPrice !== discountedPrice && (
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span>Actual Total: Rs. {(formData.quantity * actualPrice).toFixed(2)}</span>
-                      <span>Discount: Rs. {((actualPrice - discountedPrice) * formData.quantity).toFixed(2)}</span>
+              {cartItems.length > 0 && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-medium">Total Amount:</span>
+                      <span className="text-2xl font-bold text-primary">Rs. {cartTotal.toFixed(2)}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-medium">Total Amount:</span>
-                    <span className="text-2xl font-bold text-primary">Rs. {totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Invoice Actions */}
-              {selectedProduct && formData.quantity > 0 && (
+              {cartItems.length > 0 && (
                 <div className="bg-primary/5 p-4 rounded-lg space-y-3">
                   <h3 className="font-medium text-primary">Invoice Options (Optional)</h3>
                   <Button 
@@ -514,9 +545,9 @@ export const NewSale = () => {
                 <Button 
                   type="submit" 
                   className="flex-1"
-                  disabled={isSubmitting || !selectedProduct || formData.quantity <= 0}
+                  disabled={isSubmitting || cartItems.length === 0}
                 >
-                  {isSubmitting ? "Processing..." : "Complete Sale"}
+                  {isSubmitting ? "Processing..." : `Complete Sale (${cartItems.length} items)`}
                 </Button>
                 <Button 
                   type="button" 
