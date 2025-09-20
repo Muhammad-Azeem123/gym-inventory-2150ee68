@@ -389,8 +389,19 @@ export const NewSale = () => {
                 </Select>
               </div>
 
-              {/* Quantity and Add to Cart */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Product Details */}
+              {selectedProduct && (
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-2">Selected Product</h3>
+                  <p className="font-semibold">{selectedProduct.name}</p>
+                  <p className="text-sm text-muted-foreground">Category: {selectedProduct.category}</p>
+                  <p className="text-sm text-muted-foreground">Available Stock: {selectedProduct.quantity} units</p>
+                  <p className="text-sm font-medium text-primary">Actual Price: Rs. {selectedProduct.price_per_unit.toFixed(2)}</p>
+                </div>
+              )}
+
+              {/* Quantity and Pricing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="quantity">Quantity</Label>
                   <Input
@@ -401,15 +412,17 @@ export const NewSale = () => {
                     value={formData.quantity || ""}
                     onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
                     disabled={!selectedProduct}
+                    placeholder="Enter quantity"
                   />
                   {selectedProduct && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      Available: {selectedProduct.quantity} units
+                      Max: {selectedProduct.quantity} units
                     </p>
                   )}
                 </div>
+
                 <div>
-                  <Label htmlFor="discountedPrice">Price per Unit (Rs.)</Label>
+                  <Label htmlFor="discountedPrice">Discounted Price per Unit (Rs.)</Label>
                   <Input
                     id="discountedPrice"
                     type="number"
@@ -419,36 +432,46 @@ export const NewSale = () => {
                     value={formData.discountedPrice || ""}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value) || 0;
-                      if (value <= actualPrice) {
+                      if (value <= actualPrice || value === 0) {
                         setFormData({ ...formData, discountedPrice: value });
                       } else {
                         toast({
-                          title: "Invalid Price",
-                          description: "Price cannot exceed the actual price.",
+                          title: "Invalid Price", 
+                          description: `Discounted price cannot exceed actual price of Rs. ${actualPrice.toFixed(2)}`,
                           variant: "destructive"
                         });
                       }
                     }}
-                    placeholder={`Default: ${actualPrice.toFixed(2)}`}
+                    placeholder={selectedProduct ? `Default: ${actualPrice.toFixed(2)}` : "Select product first"}
                     disabled={!selectedProduct}
                   />
                   {selectedProduct && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Original: Rs. {actualPrice.toFixed(2)}
-                    </p>
+                    <div className="mt-1 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        Actual Price: Rs. {actualPrice.toFixed(2)}
+                      </p>
+                      {formData.discountedPrice && formData.discountedPrice !== actualPrice && (
+                        <p className="text-xs text-green-600">
+                          Discount: Rs. {(actualPrice - formData.discountedPrice).toFixed(2)} per unit
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div className="flex items-end">
-                  <Button 
-                    type="button"
-                    onClick={addToCart}
-                    disabled={!selectedProduct || formData.quantity <= 0}
-                    className="w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add to Cart
-                  </Button>
-                </div>
+              </div>
+
+              {/* Add to Cart Button */}
+              <div className="flex justify-center">
+                <Button 
+                  type="button"
+                  onClick={addToCart}
+                  disabled={!selectedProduct || formData.quantity <= 0}
+                  className="px-8 py-2 min-w-48"
+                  size="lg"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add to Cart
+                </Button>
               </div>
 
               {/* Cart Items */}
