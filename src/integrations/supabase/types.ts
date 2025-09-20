@@ -95,32 +95,74 @@ export type Database = {
         }
         Relationships: []
       }
-      sales: {
+      sale_items: {
         Row: {
           created_at: string
           id: string
           price_per_unit: number
-          product_id: string | null
+          product_id: string
           product_name: string
           quantity: number
+          sale_id: string
           total_amount: number
         }
         Insert: {
           created_at?: string
           id?: string
           price_per_unit: number
-          product_id?: string | null
+          product_id: string
           product_name: string
           quantity: number
+          sale_id: string
           total_amount: number
         }
         Update: {
           created_at?: string
           id?: string
           price_per_unit?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          price_per_unit: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sale_date: string | null
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          price_per_unit: number
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          sale_date?: string | null
+          total_amount: number
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          price_per_unit?: number
           product_id?: string | null
           product_name?: string
           quantity?: number
+          sale_date?: string | null
           total_amount?: number
         }
         Relationships: [

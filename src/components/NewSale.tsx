@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ShoppingCart, Download } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Download, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,12 +19,25 @@ interface Product {
   price_per_unit: number;
 }
 
+interface CartItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  category: string;
+  quantity: number;
+  price_per_unit: number;
+  discounted_price: number;
+  total_amount: number;
+  available_stock: number;
+}
+
 export const NewSale = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { categories } = useCategories();
   const [formData, setFormData] = useState({
     category: "all",
@@ -76,12 +89,81 @@ export const NewSale = () => {
   const handleProductSelect = (productId: string) => {
     const product = filteredProducts.find(p => p.id === productId);
     setSelectedProduct(product || null);
-    setFormData(prev => ({ ...prev, productId }));
+    setFormData(prev => ({ ...prev, productId, discountedPrice: product?.price_per_unit || 0 }));
+  };
+
+  const addToCart = () => {
+    if (!selectedProduct || formData.quantity <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Please select a product and enter a valid quantity.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if product already exists in cart
+    const existingItemIndex = cartItems.findIndex(item => item.product_id === selectedProduct.id);
+    const existingQuantity = existingItemIndex >= 0 ? cartItems[existingItemIndex].quantity : 0;
+    const totalRequestedQuantity = existingQuantity + formData.quantity;
+
+    if (totalRequestedQuantity > selectedProduct.quantity) {
+      toast({
+        title: "Insufficient Stock",
+        description: `Only ${selectedProduct.quantity} units available in stock. You already have ${existingQuantity} in cart.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const discountedPrice = formData.discountedPrice || selectedProduct.price_per_unit;
+    const newItem: CartItem = {
+      id: Date.now().toString(),
+      product_id: selectedProduct.id,
+      product_name: selectedProduct.name,
+      category: selectedProduct.category,
+      quantity: formData.quantity,
+      price_per_unit: selectedProduct.price_per_unit,
+      discounted_price: discountedPrice,
+      total_amount: formData.quantity * discountedPrice,
+      available_stock: selectedProduct.quantity
+    };
+
+    if (existingItemIndex >= 0) {
+      // Update existing item
+      const updatedItems = [...cartItems];
+      updatedItems[existingItemIndex] = {
+        ...updatedItems[existingItemIndex],
+        quantity: totalRequestedQuantity,
+        total_amount: totalRequestedQuantity * discountedPrice
+      };
+      setCartItems(updatedItems);
+    } else {
+      // Add new item
+      setCartItems([...cartItems, newItem]);
+    }
+
+    // Reset form
+    setFormData(prev => ({ ...prev, productId: "", quantity: 0, discountedPrice: 0 }));
+    setSelectedProduct(null);
+
+    toast({
+      title: "Item Added",
+      description: `Added ${formData.quantity} units of ${selectedProduct.name} to cart`,
+    });
+  };
+
+  const removeFromCart = (itemId: string) => {
+    setCartItems(cartItems.filter(item => item.id !== itemId));
+    toast({
+      title: "Item Removed",
+      description: "Item removed from cart",
+    });
   };
 
   const actualPrice = selectedProduct?.price_per_unit || 0;
   const discountedPrice = formData.discountedPrice || actualPrice;
-  const totalAmount = formData.quantity * discountedPrice;
+  const cartTotal = cartItems.reduce((sum, item) => sum + item.total_amount, 0);
 
   // Auto-fill discounted price with actual price when product changes
   useEffect(() => {
@@ -91,18 +173,14 @@ export const NewSale = () => {
   }, [selectedProduct]);
 
   const generateInvoicePDF = () => {
-    if (!selectedProduct) return;
+    if (cartItems.length === 0) return;
     
     const invoiceData = {
       invoiceNumber: `INV-${Date.now()}`,
       date: new Date().toLocaleDateString(),
-      productName: selectedProduct.name,
-      category: selectedProduct.category,
-      quantity: formData.quantity,
-      actualPrice: actualPrice,
-      discountedPrice: discountedPrice,
-      totalAmount: totalAmount,
-      customerName: formData.customerName || "Customer"
+      customerName: formData.customerName || "Customer",
+      items: cartItems,
+      totalAmount: cartTotal
     };
 
     // Create PDF using jsPDF
@@ -122,34 +200,38 @@ export const NewSale = () => {
     doc.text(`Date: ${invoiceData.date}`, 20, 75);
     doc.text(`Customer: ${invoiceData.customerName}`, 20, 85);
     
-    // Item details
+    // Items header
     doc.setFont(undefined, 'bold');
-    doc.text('ITEM DETAILS:', 20, 105);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Product: ${invoiceData.productName}`, 20, 115);
-    doc.text(`Category: ${invoiceData.category}`, 20, 125);
-    doc.text(`Quantity: ${invoiceData.quantity}`, 20, 135);
+    doc.text('ITEMS:', 20, 105);
     
-    // Pricing
-    doc.setFont(undefined, 'bold');
-    doc.text('PRICING:', 20, 155);
+    // Items details
+    let yPosition = 115;
     doc.setFont(undefined, 'normal');
-    doc.text(`Actual Price per Unit: Rs. ${invoiceData.actualPrice.toFixed(2)}`, 20, 165);
-    doc.text(`Discounted Price per Unit: Rs. ${invoiceData.discountedPrice.toFixed(2)}`, 20, 175);
     
-    if (invoiceData.actualPrice !== invoiceData.discountedPrice) {
-      doc.text(`Discount: Rs. ${(invoiceData.actualPrice - invoiceData.discountedPrice).toFixed(2)} per unit`, 20, 185);
-    }
+    cartItems.forEach((item, index) => {
+      doc.text(`${index + 1}. ${item.product_name}`, 20, yPosition);
+      doc.text(`   Category: ${item.category}`, 20, yPosition + 8);
+      doc.text(`   Quantity: ${item.quantity} x Rs. ${item.discounted_price.toFixed(2)}`, 20, yPosition + 16);
+      doc.text(`   Subtotal: Rs. ${item.total_amount.toFixed(2)}`, 20, yPosition + 24);
+      
+      if (item.price_per_unit !== item.discounted_price) {
+        doc.text(`   (Original price: Rs. ${item.price_per_unit.toFixed(2)})`, 20, yPosition + 32);
+        yPosition += 40;
+      } else {
+        yPosition += 32;
+      }
+      yPosition += 8; // Extra spacing between items
+    });
     
     // Total
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.text(`TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}`, 20, 205);
+    doc.text(`TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}`, 20, yPosition + 20);
     
     // Footer
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
-    doc.text('Thank you for choosing FitStock Manager!', 20, 250);
+    doc.text('Thank you for choosing FitStock Manager!', 20, yPosition + 50);
     
     // Save the PDF
     doc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
@@ -163,19 +245,10 @@ export const NewSale = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedProduct || formData.quantity <= 0) {
+    if (cartItems.length === 0) {
       toast({
-        title: "Invalid Input",
-        description: "Please select a product and enter a valid quantity.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (formData.quantity > selectedProduct.quantity) {
-      toast({
-        title: "Insufficient Stock",
-        description: `Only ${selectedProduct.quantity} units available in stock.`,
+        title: "Empty Cart",
+        description: "Please add at least one item to the cart before completing the sale.",
         variant: "destructive"
       });
       return;
@@ -184,27 +257,47 @@ export const NewSale = () => {
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
+      // First, create the sale header
+      const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
-          product_id: selectedProduct.id,
-          product_name: selectedProduct.name,
-          quantity: formData.quantity,
-          price_per_unit: discountedPrice,
-          total_amount: totalAmount
-        });
+          customer_name: formData.customerName || null,
+          customer_phone: formData.customerPhone || null,
+          total_amount: 0, // Will be calculated by trigger
+        })
+        .select()
+        .single();
 
-      if (error) {
-        console.error('Sale insertion error:', error);
-        throw error;
+      if (saleError || !saleData) {
+        console.error('Sale insertion error:', saleError);
+        throw saleError;
+      }
+
+      // Then, insert all sale items
+      const saleItemsData = cartItems.map(item => ({
+        sale_id: saleData.id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price_per_unit: item.discounted_price,
+        total_amount: item.total_amount
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItemsData);
+
+      if (itemsError) {
+        console.error('Sale items insertion error:', itemsError);
+        throw itemsError;
       }
 
       toast({
         title: "Sale Completed",
-        description: `Successfully sold ${formData.quantity} units of ${selectedProduct.name}`,
+        description: `Successfully completed sale with ${cartItems.length} items`,
       });
 
-      // Reset form
+      // Reset form and cart
       setFormData({
         category: "all",
         productId: "",
@@ -214,6 +307,7 @@ export const NewSale = () => {
         discountedPrice: 0
       });
       setSelectedProduct(null);
+      setCartItems([]);
 
       // Navigate back after a short delay
       setTimeout(() => navigate("/"), 1500);
