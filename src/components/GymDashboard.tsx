@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus, Dumbbell, Filter, FolderOpen } from "lucide-react";
+import { Package, ShoppingCart, TrendingUp, AlertTriangle, Eye, LogOut, X, Search, Plus, Dumbbell, Filter, FolderOpen, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { generateInvoicePDF } from "@/lib/invoiceGenerator";
 
 export const GymDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalSales, setTotalSales] = useState(0);
   const [lowStockItems, setLowStockItems] = useState(0);
@@ -135,7 +138,7 @@ export const GymDashboard = () => {
 
       const { data: recentSales } = await supabase
         .from('sales')
-        .select('*')
+        .select('*, sale_items(*)')
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -154,6 +157,33 @@ export const GymDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
+  };
+
+  const handleDownloadInvoice = (sale: any) => {
+    if (!sale.sale_items || sale.sale_items.length === 0) {
+      toast({
+        title: "Error",
+        description: "No items found for this sale",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const invoiceData = {
+      invoiceNumber: `INV-${sale.id.slice(0, 8).toUpperCase()}`,
+      date: new Date(sale.created_at).toLocaleDateString(),
+      customerName: sale.customer_name,
+      customerPhone: sale.customer_phone,
+      items: sale.sale_items,
+      totalAmount: sale.total_amount
+    };
+
+    generateInvoicePDF(invoiceData);
+    
+    toast({
+      title: "Invoice Downloaded",
+      description: `Invoice ${invoiceData.invoiceNumber} downloaded successfully`
+    });
   };
 
   return (
@@ -399,20 +429,34 @@ export const GymDashboard = () => {
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-foreground truncate">
                           {activity.type === 'purchase' ? 'Purchase: ' : 'Sale: '}
-                          {activity.product_name}
+                          {activity.product_name || (activity.sale_items && activity.sale_items.length > 0 ? `${activity.sale_items.length} items` : 'N/A')}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Qty: {activity.quantity} • {new Date(activity.created_at).toLocaleDateString()}
+                          {activity.type === 'purchase' ? `Qty: ${activity.quantity} • ` : ''}
+                          {new Date(activity.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right ml-4 flex-shrink-0">
-                      <p className="font-medium text-sm">
-                        Rs. {(activity.total_cost || activity.total_amount)?.toFixed(2)}
-                      </p>
-                      <Badge variant={activity.type === 'purchase' ? 'default' : 'secondary'} className="text-xs">
-                        {activity.type === 'purchase' ? 'Purchase' : 'Sale'}
-                      </Badge>
+                    <div className="text-right ml-4 flex-shrink-0 flex items-center gap-2">
+                      <div>
+                        <p className="font-medium text-sm">
+                          Rs. {(activity.total_cost || activity.total_amount)?.toFixed(2)}
+                        </p>
+                        <Badge variant={activity.type === 'purchase' ? 'default' : 'secondary'} className="text-xs">
+                          {activity.type === 'purchase' ? 'Purchase' : 'Sale'}
+                        </Badge>
+                      </div>
+                      {activity.type === 'sale' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownloadInvoice(activity)}
+                          className="h-8 w-8 p-0"
+                          title="Download Invoice"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))

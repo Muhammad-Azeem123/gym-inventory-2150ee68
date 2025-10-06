@@ -9,8 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/useCategories";
-import jsPDF from 'jspdf';
 import { z } from "zod";
+import { generateInvoicePDF } from "@/lib/invoiceGenerator";
 
 const customerSchema = z.object({
   customerName: z.string().optional(),
@@ -178,69 +178,19 @@ export const NewSale = () => {
     }
   }, [selectedProduct]);
 
-  const generateInvoicePDF = () => {
+  const handleGenerateInvoice = () => {
     if (cartItems.length === 0) return;
     
     const invoiceData = {
       invoiceNumber: `INV-${Date.now()}`,
       date: new Date().toLocaleDateString(),
       customerName: formData.customerName || "Customer",
+      customerPhone: formData.customerPhone,
       items: cartItems,
       totalAmount: cartTotal
     };
 
-    // Create PDF using jsPDF
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.setFont(undefined, 'bold');
-    doc.text('FITSTOCK MANAGER', 20, 30);
-    doc.setFontSize(16);
-    doc.text('INVOICE', 20, 45);
-    
-    // Invoice details
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Invoice Number: ${invoiceData.invoiceNumber}`, 20, 65);
-    doc.text(`Date: ${invoiceData.date}`, 20, 75);
-    doc.text(`Customer: ${invoiceData.customerName}`, 20, 85);
-    
-    // Items header
-    doc.setFont(undefined, 'bold');
-    doc.text('ITEMS:', 20, 105);
-    
-    // Items details
-    let yPosition = 115;
-    doc.setFont(undefined, 'normal');
-    
-    cartItems.forEach((item, index) => {
-      doc.text(`${index + 1}. ${item.product_name}`, 20, yPosition);
-      doc.text(`   Category: ${item.category}`, 20, yPosition + 8);
-      doc.text(`   Quantity: ${item.quantity} x Rs. ${item.discounted_price.toFixed(2)}`, 20, yPosition + 16);
-      doc.text(`   Subtotal: Rs. ${item.total_amount.toFixed(2)}`, 20, yPosition + 24);
-      
-      if (item.price_per_unit !== item.discounted_price) {
-        doc.text(`   (Original price: Rs. ${item.price_per_unit.toFixed(2)})`, 20, yPosition + 32);
-        yPosition += 40;
-      } else {
-        yPosition += 32;
-      }
-      yPosition += 8; // Extra spacing between items
-    });
-    
-    // Total
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.text(`TOTAL AMOUNT: Rs. ${invoiceData.totalAmount.toFixed(2)}`, 20, yPosition + 20);
-    
-    // Footer
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text('Thank you for choosing FitStock Manager!', 20, yPosition + 50);
-    
-    // Save the PDF
-    doc.save(`invoice-${invoiceData.invoiceNumber}.pdf`);
+    generateInvoicePDF(invoiceData);
 
     toast({
       title: "Invoice Downloaded",
@@ -572,7 +522,7 @@ export const NewSale = () => {
                   <Button 
                     type="button"
                     variant="outline"
-                    onClick={generateInvoicePDF}
+                    onClick={handleGenerateInvoice}
                     className="w-full"
                   >
                     <Download className="w-4 h-4 mr-2" />
