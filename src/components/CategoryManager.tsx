@@ -8,6 +8,11 @@ import { ArrowLeft, FolderPlus, Edit, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const categorySchema = z.object({
+  name: z.string().trim().min(1, "Category name is required").max(50, "Category name too long")
+});
 
 interface Category {
   id: string;
@@ -50,22 +55,15 @@ export const CategoryManager = () => {
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!newCategoryName.trim()) {
-      toast({
-        title: "Invalid Input",
-        description: "Category name cannot be empty",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-    
+
     try {
+      // Validate input
+      const validated = categorySchema.parse({ name: newCategoryName });
+
       const { error } = await supabase
         .from('categories')
-        .insert({ name: newCategoryName.trim() });
+        .insert({ name: validated.name });
 
       if (error) {
         if (error.code === '23505') { // unique constraint violation
@@ -82,18 +80,25 @@ export const CategoryManager = () => {
 
       toast({
         title: "Success",
-        description: `Category "${newCategoryName}" added successfully`
+        description: `Category "${validated.name}" added successfully`
       });
 
       setNewCategoryName("");
       fetchCategories();
     } catch (error) {
-      console.error('Error adding category:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add category",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add category",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -106,14 +111,17 @@ export const CategoryManager = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingCategory || !editCategoryName.trim()) return;
+    if (!editingCategory) return;
 
     setIsSubmitting(true);
     
     try {
+      // Validate input
+      const validated = categorySchema.parse({ name: editCategoryName });
+
       const { error } = await supabase
         .from('categories')
-        .update({ name: editCategoryName.trim() })
+        .update({ name: validated.name })
         .eq('id', editingCategory.id);
 
       if (error) {
@@ -131,7 +139,7 @@ export const CategoryManager = () => {
 
       toast({
         title: "Success",
-        description: `Category updated to "${editCategoryName}"`
+        description: `Category updated to "${validated.name}"`
       });
 
       setIsDialogOpen(false);
@@ -139,12 +147,19 @@ export const CategoryManager = () => {
       setEditCategoryName("");
       fetchCategories();
     } catch (error) {
-      console.error('Error updating category:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update category",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update category",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

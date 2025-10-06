@@ -10,6 +10,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/useCategories";
 import jsPDF from 'jspdf';
+import { z } from "zod";
+
+const phoneSchema = z.string().regex(/^[0-9]{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal(""));
+const customerSchema = z.object({
+  customerName: z.string().trim().max(100, "Customer name too long").optional().or(z.literal("")),
+  customerPhone: phoneSchema
+});
 
 interface Product {
   id: string;
@@ -254,6 +261,23 @@ export const NewSale = () => {
       return;
     }
 
+    // Validate customer data
+    try {
+      customerSchema.parse({
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -261,15 +285,14 @@ export const NewSale = () => {
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
-          customer_name: formData.customerName || null,
-          customer_phone: formData.customerPhone || null,
+          customer_name: formData.customerName.trim() || null,
+          customer_phone: formData.customerPhone.trim() || null,
           total_amount: 0, // Will be calculated by trigger
         })
         .select()
         .single();
 
       if (saleError || !saleData) {
-        console.error('Sale insertion error:', saleError);
         throw saleError;
       }
 
@@ -288,7 +311,6 @@ export const NewSale = () => {
         .insert(saleItemsData);
 
       if (itemsError) {
-        console.error('Sale items insertion error:', itemsError);
         throw itemsError;
       }
 

@@ -9,6 +9,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/useCategories";
+import { z } from "zod";
+
+const purchaseSchema = z.object({
+  productName: z.string().trim().min(1, "Product name is required").max(100, "Product name too long"),
+  category: z.string().trim().min(1, "Category is required").max(50, "Category name too long"),
+  quantity: z.number().int().min(1, "Quantity must be at least 1").max(999999, "Quantity too large"),
+  pricePerUnit: z.number().min(0.01, "Price must be greater than 0").max(999999.99, "Price too large")
+});
 
 export const AddPurchase = () => {
   const navigate = useNavigate();
@@ -27,26 +35,24 @@ export const AddPurchase = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.productName || !formData.category || formData.quantity <= 0 || formData.pricePerUnit <= 0) {
-      toast({
-        title: "Invalid Input",
-        description: "Please fill in all fields with valid values.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-    
+
     try {
+      // Validate input
+      const validated = purchaseSchema.parse({
+        productName: formData.productName,
+        category: formData.category,
+        quantity: formData.quantity,
+        pricePerUnit: formData.pricePerUnit
+      });
+
       const { error } = await supabase
         .from('purchases')
         .insert({
-          product_name: formData.productName,
-          category: formData.category,
-          quantity: formData.quantity,
-          price_per_unit: formData.pricePerUnit,
+          product_name: validated.productName,
+          category: validated.category,
+          quantity: validated.quantity,
+          price_per_unit: validated.pricePerUnit,
           total_cost: totalCost
         });
 
@@ -54,7 +60,7 @@ export const AddPurchase = () => {
 
       toast({
         title: "Purchase Added",
-        description: `Successfully added ${formData.quantity} units of ${formData.productName}`,
+        description: `Successfully added ${validated.quantity} units of ${validated.productName}`,
       });
 
       // Reset form
@@ -68,12 +74,19 @@ export const AddPurchase = () => {
       // Navigate back after a short delay
       setTimeout(() => navigate("/"), 1500);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add purchase. Please try again.",
-        variant: "destructive"
-      });
-      console.error('Error adding purchase:', error);
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add purchase. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
