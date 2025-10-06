@@ -12,10 +12,9 @@ import { useCategories } from "@/hooks/useCategories";
 import jsPDF from 'jspdf';
 import { z } from "zod";
 
-const phoneSchema = z.string().regex(/^[0-9]{10}$/, "Phone number must be exactly 10 digits").optional().or(z.literal(""));
 const customerSchema = z.object({
-  customerName: z.string().trim().max(100, "Customer name too long").optional().or(z.literal("")),
-  customerPhone: phoneSchema
+  customerName: z.string().optional(),
+  customerPhone: z.string().optional()
 });
 
 interface Product {
