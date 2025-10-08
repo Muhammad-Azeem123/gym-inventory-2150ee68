@@ -102,10 +102,10 @@ export const GymDashboard = () => {
       const uniqueCategories = Array.from(new Set(products?.map(product => product.category) || []));
       setCategories(uniqueCategories);
       
-      // Calculate category statistics
+      // Calculate category statistics (total quantity per category)
       const categoryStats = uniqueCategories.map(category => ({
         name: category,
-        count: products?.filter(p => p.category === category).length || 0
+        count: products?.filter(p => p.category === category).reduce((sum, p) => sum + p.quantity, 0) || 0
       }));
       setCategoryStats(categoryStats);
 
