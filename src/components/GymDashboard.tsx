@@ -449,12 +449,12 @@ export const GymDashboard = () => {
                       {activity.type === 'sale' && (
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => handleDownloadInvoice(activity)}
-                          className="h-8 w-8 p-0"
-                          title="Download Invoice"
+                          className="flex items-center gap-2"
                         >
                           <FileText className="h-4 w-4" />
+                          Invoice
                         </Button>
                       )}
                     </div>
