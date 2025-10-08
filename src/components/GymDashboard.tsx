@@ -134,19 +134,19 @@ export const GymDashboard = () => {
         .from('purchases')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(50);
 
       const { data: recentSales } = await supabase
         .from('sales')
         .select('*, sale_items(*)')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(50);
 
       // Combine and sort recent activity
       const combinedActivity = [
         ...(recentPurchases?.map(item => ({ ...item, type: 'purchase' })) || []),
         ...(recentSales?.map(item => ({ ...item, type: 'sale' })) || [])
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 50);
 
       setRecentActivity(combinedActivity);
     } catch (error) {
